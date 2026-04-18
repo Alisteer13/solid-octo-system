@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>A Quiet Space</title>
+
+<style>
+:root {
+    --bg-color: #f4f4f4;
+    --text-color: #555;
+    --accent-color: #888;
+    --overlay-opacity: 0;
+}
+
+/* =========================
+   BASE LAYOUT (iOS SAFE)
+========================= */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100dvh; /* FIX: iOS dynamic viewport */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Georgia', serif;
+    background-color: var(--bg-color);
+    transition: background-color 2.5s ease, color 2.5s ease;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+/* =========================
+   CONTAINER
+========================= */
+#experience-container {
+    text-align: center;
+    width: min(600px, 92vw);
+    padding: clamp(16px, 4vw, 40px);
+    z-index: 2;
+}
+
+/* =========================
+   MESSAGE
+========================= */
+#message {
+    font-size: clamp(1rem, 2.3vw, 1.4rem);
+    line-height: 1.7;
+    color: var(--text-color);
+    margin-bottom: clamp(24px, 5vw, 50px);
+    min-height: 90px;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    font-style: italic;
+}
+
+/* =========================
+   BUTTON (iOS TOUCH FIX)
+========================= */
+button {
+    background: none;
+    border: 1px solid var(--accent-color);
+    padding: clamp(10px, 2.5vw, 14px) clamp(22px, 5vw, 36px);
+    color: var(--accent-color);
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    letter-spacing: 2px;
+    cursor: pointer;
+
+    /* iOS FIXES */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+
+    transition: all 0.5s ease;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* =========================
+   WARM GLOW LAYER
+========================= */
+#warmth-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255,190,150,0.12) 0%, rgba(0,0,0,0) 70%);
+    opacity: var(--overlay-opacity);
+    pointer-events: none;
+
+    transition: opacity 3s ease;
+    will-change: transform, opacity;
+    transform: translateZ(0);
+
+    animation: pulse 8s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes pulse {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+/* =========================
+   MOBILE OPTIMIZATION
+========================= */
+@media (max-width: 600px) {
+    #message {
+        min-height: 110px;
+        line-height: 1.6;
+    }
+
+    button {
+        width: 100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="warmth-overlay"></div>
+
+<div id="experience-container">
+    <div id="message">Tap to begin</div>
+    <button id="main-button" onclick="nextStep()">Begin</button>
+</div>
+
+<script>
+const stages = [
+    { text: "I wasn't sure if you'd actually click.", bg:"#f0f0f0", color:"#666", accent:"#999", warmth:0.05 },
+    { text: "It's nice having your attention here.", bg:"#eceae4", color:"#5e5a52", accent:"#8a8479", warmth:0.15 },
+    { text: "Time slows down when you're present.", bg:"#e6ded1", color:"#544d42", accent:"#9e8e76", warmth:0.3 },
+    { text: "You stopped feeling like a passing moment.", bg:"#ddd0bc", color:"#4a3f31", accent:"#b59c7d", warmth:0.5 },
+    { text: "There’s a kind of safety here… and it’s unfamiliar.", bg:"#d4c1a8", color:"#3d3224", accent:"#c7a580", warmth:0.7 },
+    { text: "I’ve been trying to say this without shaking.", bg:"#c9ae92", color:"#2e2418", accent:"#d4aa7b", warmth:0.9 },
+    { text: "Every version of me finds its way to you.", bg:"#bc9b7e", color:"#1f1810", accent:"transparent", warmth:1, final:true }
+];
+
+let current = 0;
+let locked = false;
+
+/* TYPEWRITER */
+function typeText(el, text, speed = 22) {
+    el.textContent = "";
+    let i = 0;
+
+    const interval = setInterval(() => {
+        el.textContent += text[i];
+        i++;
+        if (i >= text.length) clearInterval(interval);
+    }, speed);
+}
+
+/* MAIN FLOW */
+function nextStep() {
+    if (locked) return;
+    locked = true;
+
+    const stage = stages[current];
+    const msg = document.getElementById("message");
+    const btn = document.getElementById("main-button");
+
+    msg.style.opacity = 0;
+    btn.style.opacity = 0;
+
+    setTimeout(() => {
+        document.documentElement.style.setProperty("--bg-color", stage.bg);
+        document.documentElement.style.setProperty("--text-color", stage.color);
+        document.documentElement.style.setProperty("--accent-color", stage.accent);
+        document.documentElement.style.setProperty("--overlay-opacity", stage.warmth);
+
+        msg.style.opacity = 1;
+        typeText(msg, stage.text);
+
+        if (stage.final) {
+            btn.textContent = "Restart";
+
+            btn.onclick = () => {
+                current = 0;
+                msg.textContent = "";
+                msg.style.opacity = 0;
+                btn.textContent = "Begin";
+                btn.onclick = nextStep;
+            };
+
+            btn.style.opacity = 1;
+        } else {
+            setTimeout(() => {
+                btn.textContent = "Continue";
+                btn.style.opacity = 1;
+            }, 1500);
+        }
+
+        current++;
+        locked = false;
+
+    }, 900);
+}
+</script>
+
+</body>
+</html>
